@@ -31,10 +31,10 @@
 
 ```javascript
 // ==UserScript==
-// @name         评教单学期自动批量评教（模拟selectize点击）
+// @name         评教单学期自动批量评教（最简版）
 // @namespace    http://tampermonkey.net/
-// @version      1.1
-// @description  自动完成当前学期所有老师的评教，支持模拟selectize人工点击切换学期
+// @version      1.0
+// @description  自动完成当前学期所有老师的评教，切换学期后自动运行，无需刷新
 // @match        https://jxglstu.hfut.edu.cn/eams5-student/for-std/lesson-survey/semester-index/*
 // @match        https://jxglstu.hfut.edu.cn/eams5-student/for-std/lesson-survey/start-survey/*
 // @grant        none
@@ -43,47 +43,7 @@
 (function() {
     'use strict';
 
-    // ========== 模拟selectize人工点击切换学期 ==========
-    function simulateSelectizeClick(targetSemesterText, callback) {
-        // 1. 点击selectize的输入框，展开下拉
-        let control = document.querySelector('.selectize-control');
-        if (!control) return;
-        control.click();
-
-        // 2. 等待下拉菜单渲染
-        setTimeout(() => {
-            let options = document.querySelectorAll('.selectize-dropdown-content .option');
-            let found = false;
-            options.forEach(opt => {
-                if (opt.textContent.trim() === targetSemesterText.trim()) {
-                    opt.click();
-                    found = true;
-                }
-            });
-            if (found && typeof callback === 'function') {
-                // 等待表格刷新
-                waitForTableRefresh(callback);
-            }
-        }, 300);
-    }
-
-    function waitForTableRefresh(callback) {
-        let table = document.querySelector('.table tbody');
-        if (!table) {
-            setTimeout(() => waitForTableRefresh(callback), 300);
-            return;
-        }
-        let oldHtml = table.innerHTML;
-        let observer = new MutationObserver(() => {
-            if (table.innerHTML !== oldHtml) {
-                observer.disconnect();
-                setTimeout(callback, 500); // 等待内容稳定
-            }
-        });
-        observer.observe(table, { childList: true, subtree: true });
-    }
-
-    // ========== 首页批量评教逻辑 ==========
+    // ========== 首页逻辑 ==========
     function batchEvaluateCurrentSemester() {
         setTimeout(() => {
             let links = Array.from(document.querySelectorAll('a[name="startSurvey"]'));
@@ -100,7 +60,7 @@
         }, 1200);
     }
 
-    // ========== 监听表格内容变化 ==========
+    // 监听表格内容变化（切换学期后自动运行）
     function observeTableChange() {
         let table = document.querySelector('.table tbody');
         if (!table) {
@@ -119,7 +79,7 @@
         batchEvaluateCurrentSemester();
     }
 
-    // ========== 评教页面自动全选并提交 ==========
+    // ========== 评教页面逻辑 ==========
     function surveyMain() {
         function selectFirstRadios() {
             let radios = document.querySelectorAll("input[type='radio']");
@@ -146,20 +106,12 @@
 
     // ========== 页面入口 ==========
     if (location.pathname.includes('/semester-index/')) {
-        // 你可以在这里手动指定目标学期的文本，比如：
-        // let targetSemesterText = "2023-2024学年第二学期";
-        // simulateSelectizeClick(targetSemesterText, observeTableChange);
-
-        // 或者只自动批量评教当前学期
         observeTableChange();
     } else if (location.pathname.includes('/start-survey/')) {
         window.addEventListener('load', function() {
             surveyMain();
         });
     }
-
-    // ========== 提供一个全局函数，方便你在控制台手动调用 ==========
-    window.simulateSelectizeClick = simulateSelectizeClick;
 })();
 ```
 
