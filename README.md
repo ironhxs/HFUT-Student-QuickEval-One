@@ -116,13 +116,67 @@
 ```
 
 ---
+### 这个是仅仅自动给当前教评页面老师打满分（因为有些对不起我的满分！）
+```javascript
+// ==UserScript==
+// @name         评教自动全选第一个并提交
+// @namespace    http://tampermonkey.net/
+// @version      1.1
+// @description  自动选择评教页面每题的第一个选项并自动提交
+// @match        https://jxglstu.hfut.edu.cn/eams5-student/for-std/lesson-survey/start-survey/*
+// @grant        none
+// ==/UserScript==
 
+(function() {
+    'use strict';
+
+    // 自动选择每题的第一个单选项
+    function selectFirstRadios() {
+        let radios = document.querySelectorAll("input[type='radio']");
+        let grouped = {};
+        radios.forEach(radio => {
+            let qid = radio.getAttribute('questionid');
+            if (qid && !grouped[qid]) {
+                radio.checked = true;
+                grouped[qid] = true;
+            }
+        });
+    }
+
+    // 自动点击提交按钮
+    function autoSubmit() {
+        // 提交按钮id为save-button
+        let btn = document.getElementById('save-button');
+        if (btn) {
+            btn.click();
+        }
+    }
+
+    // 监听问卷内容变化
+    function observeAndAutoFill() {
+        selectFirstRadios();
+        let container = document.getElementById('surveyContainer');
+        if (container) {
+            let observer = new MutationObserver(() => {
+                selectFirstRadios();
+            });
+            observer.observe(container, { childList: true, subtree: true });
+        }
+        // 延迟1秒后自动提交，确保选项已填好
+        setTimeout(autoSubmit, 1200);
+    }
+
+    // 页面加载后执行
+    window.addEventListener('load', function() {
+        setTimeout(observeAndAutoFill, 1200);
+    });
+})();
+```
 ## 注意事项
-
+- 这个太弱了（本人太菜了），如果是安卓的推荐大佬的[聚在工大](https://github.com/Chiu-xaH/HFUT-Schedule/tree/main)支持一键教评。
 - 本脚本仅自动评教**当前学期下所有未完成老师**，如需评教其他学期，请手动切换学期。
 - **评教页面提交后，系统会自动跳回默认学期（如2012-2013学年第一学期），需再次手动切换学期。**
 - 评教页面会自动全选第一个选项并自动提交。
-- 如遇页面结构变动或脚本失效，请提交 issue 或 PR。
 
 ---
 
